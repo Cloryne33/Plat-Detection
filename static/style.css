@@ -1,0 +1,270 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#0f0f0f;
+    font-family:Arial, sans-serif;
+    color:white;
+    min-height:100vh;
+    padding:20px;
+}
+
+/* ========================= */
+/* CONTAINER */
+/* ========================= */
+
+.container{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.card{
+    width:100%;
+    max-width:500px;
+    background:#1b1b1b;
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 0 25px rgba(0,255,150,0.2);
+}
+
+/* ========================= */
+/* TITLE */
+/* ========================= */
+
+h1{
+    text-align:center;
+    margin-bottom:25px;
+    color:#00ff99;
+    font-size:28px;
+}
+
+.section-title{
+    margin-bottom:12px;
+    font-size:18px;
+    font-weight:bold;
+    color:#00ff99;
+}
+
+/* ========================= */
+/* CUSTOM FILE INPUT */
+/* ========================= */
+
+.hidden-input{
+    display:none;
+}
+
+.custom-upload{
+    width:100%;
+    display:block;
+    text-align:center;
+    padding:14px;
+    border-radius:12px;
+    background:#262626;
+    color:white;
+    cursor:pointer;
+    margin-bottom:15px;
+    border:2px dashed #00cc88;
+    transition:0.3s;
+    font-weight:bold;
+}
+
+.custom-upload:hover{
+    background:#333;
+    border-color:#00ff99;
+}
+
+.file-name{
+    margin-bottom:20px;
+    font-size:14px;
+    color:#aaa;
+    text-align:center;
+}
+
+/* ========================= */
+/* BRIGHTNESS */
+/* ========================= */
+
+.brightness-label{
+    display:block;
+    margin-bottom:10px;
+    margin-top:10px;
+}
+
+.slider{
+    width:100%;
+    margin-bottom:20px;
+    cursor:pointer;
+}
+
+/* ========================= */
+/* BUTTON */
+/* ========================= */
+
+button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    background:#00cc88;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    margin-bottom:15px;
+    transition:0.3s;
+    font-weight:bold;
+}
+
+button:hover{
+    background:#00aa72;
+    transform:scale(1.02);
+}
+
+/* ========================= */
+/* DIVIDER */
+/* ========================= */
+
+.divider{
+    height:1px;
+    background:#333;
+    margin:25px 0;
+}
+
+/* ========================= */
+/* CAMERA */
+/* ========================= */
+
+.camera-container{
+    position:relative;
+    width:100%;
+    overflow:hidden;
+    border-radius:16px;
+    margin-bottom:15px;
+}
+
+video{
+    width:100%;
+    border-radius:16px;
+    border:3px solid #00cc88;
+    background:black;
+    transition:0.2s;
+}
+
+/* ========================= */
+/* OVERLAY */
+/* ========================= */
+
+.camera-overlay{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -50%);
+    width:80%;
+    height:40%;
+    border:3px solid rgba(0,255,150,0.7);
+    border-radius:12px;
+    pointer-events:none;
+}
+
+/* ========================= */
+/* CANVAS */
+/* ========================= */
+
+canvas{
+    display:none;
+}
+
+/* ========================= */
+/* RESULT */
+/* ========================= */
+
+.result-box{
+    margin-top:20px;
+    text-align:center;
+}
+
+.result-box h2{
+    margin-bottom:15px;
+    color:#00ff99;
+}
+
+.result-image{
+    width:100%;
+    border-radius:16px;
+    border:3px solid #00cc88;
+}
+
+/* ========================= */
+/* POPUP */
+/* ========================= */
+
+.popup{
+    position:fixed;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    opacity:0;
+    pointer-events:none;
+    transition:0.3s;
+    z-index:999;
+}
+
+.popup.show{
+    opacity:1;
+    top:40px;
+}
+
+.popup-content{
+    background:#1f1f1f;
+    padding:14px 22px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    box-shadow:0 0 20px rgba(0,255,150,0.3);
+    border:1px solid #00cc88;
+}
+
+.popup-icon{
+    font-size:22px;
+}
+
+.popup-text{
+    font-size:15px;
+}
+
+/* ========================= */
+/* MOBILE */
+/* ========================= */
+
+@media(max-width:600px){
+
+    body{
+        padding:10px;
+    }
+
+    .card{
+        padding:15px;
+    }
+
+    h1{
+        font-size:24px;
+    }
+
+    button{
+        font-size:14px;
+        padding:12px;
+    }
+
+    .popup-content{
+        padding:12px 18px;
+    }
+
+    .popup-text{
+        font-size:14px;
+    }
+
+}

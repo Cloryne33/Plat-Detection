@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Deteksi Plat Indonesia</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>🚗 Deteksi Plat Indonesia</h1>
+
+        <!-- ========================= -->
+        <!-- UPLOAD -->
+        <!-- ========================= -->
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            <div class="section-title">
+                Upload Gambar
+            </div>
+
+            <!-- FILE BUTTON -->
+
+            <label
+                for="imageUpload"
+                class="custom-upload"
+            >
+                📁 Pilih Gambar
+            </label>
+
+            <input
+                type="file"
+                id="imageUpload"
+                name="image"
+                accept="image/*"
+                class="hidden-input"
+            >
+
+            <!-- FILE NAME -->
+
+            <div
+                id="fileName"
+                class="file-name"
+            >
+                Belum ada file dipilih
+            </div>
+
+            <!-- BRIGHTNESS -->
+
+            <label class="brightness-label">
+                Brightness Upload
+            </label>
+
+            <input
+                type="range"
+                name="brightness"
+                min="-100"
+                max="100"
+                value="0"
+                class="slider"
+            >
+
+            <!-- BUTTON -->
+
+            <button type="submit">
+                🚀 Deteksi Upload
+            </button>
+
+        </form>
+
+        <!-- ========================= -->
+        <!-- DIVIDER -->
+        <!-- ========================= -->
+
+        <div class="divider"></div>
+
+        <!-- ========================= -->
+        <!-- CAMERA -->
+        <!-- ========================= -->
+
+        <div class="section-title">
+            Kamera Langsung
+        </div>
+
+        <div class="camera-container">
+
+            <video
+                id="video"
+                autoplay
+                playsinline
+            ></video>
+
+            <div class="camera-overlay"></div>
+
+        </div>
+
+        <!-- BRIGHTNESS CAMERA -->
+        <!-- FIX: range sekarang -100..100 konsisten dengan backend -->
+
+        <label class="brightness-label">
+            Brightness Kamera
+        </label>
+
+        <input
+            type="range"
+            id="brightnessSlider"
+            min="-100"
+            max="100"
+            value="0"
+            class="slider"
+        >
+
+        <!-- CANVAS -->
+
+        <canvas id="canvas"></canvas>
+
+        <!-- CAMERA BUTTON -->
+
+        <button
+            type="button"
+            onclick="takePhoto()"
+        >
+            📸 Ambil Foto
+        </button>
+
+        <!-- DETECT BUTTON -->
+
+        <form
+            method="POST"
+            id="cameraForm"
+        >
+
+            <input
+                type="hidden"
+                name="camera_image"
+                id="camera_image"
+            >
+
+            <input
+                type="hidden"
+                name="brightness"
+                id="brightnessInput"
+                value="0"
+            >
+
+            <button type="submit">
+                🚗 Deteksi Kamera
+            </button>
+
+        </form>
+
+        <!-- ========================= -->
+        <!-- RESULT -->
+        <!-- ========================= -->
+
+        {% if result_image %}
+
+        <div class="result-box">
+
+            <h2>{{ label }}</h2>
+
+            <!-- FIX: tambah cache-buster agar gambar lama tidak muncul -->
+            <img
+                src="{{ result_image }}?t={{ range(1, 999999) | random }}"
+                class="result-image"
+            >
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- POPUP -->
+<!-- ========================= -->
+
+<div id="popup" class="popup">
+
+    <div class="popup-content">
+
+        <div class="popup-icon">
+            ✅
+        </div>
+
+        <div class="popup-text">
+            Foto berhasil diambil
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- SCRIPT -->
+<!-- ========================= -->
+
+<script>
+
+/* ========================= */
+/* CAMERA */
+/* ========================= */
+
+const video =
+    document.getElementById('video');
+
+async function startCamera(){
+
+    try{
+
+        const stream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video:{
+                    facingMode:"environment"
+                }
+
+            });
+
+        video.srcObject = stream;
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        alert(
+            "Kamera tidak bisa diakses"
+        );
+
+    }
+
+}
+
+startCamera();
+
+/* ========================= */
+/* FILE NAME */
+/* ========================= */
+
+const imageUpload =
+    document.getElementById(
+        'imageUpload'
+    );
+
+const fileName =
+    document.getElementById(
+        'fileName'
+    );
+
+imageUpload.addEventListener(
+    'change',
+    () => {
+
+        if(imageUpload.files.length > 0){
+
+            fileName.innerText =
+                imageUpload.files[0].name;
+
+        }
+
+    }
+);
+
+/* ========================= */
+/* BRIGHTNESS
+/* FIX: konversi range -100..100 ke CSS brightness() yang pakai persen
+/* CSS brightness(100%) = normal, brightness(200%) = 2x terang
+/* ========================= */
+
+const slider =
+    document.getElementById(
+        'brightnessSlider'
+    );
+
+slider.addEventListener(
+    'input',
+    () => {
+
+        const value = parseInt(slider.value);
+
+        // mapping: -100 -> 0%, 0 -> 100%, 100 -> 200%
+        const cssBrightness = value + 100;
+
+        video.style.filter =
+            `brightness(${cssBrightness}%)`;
+
+    }
+);
+
+/* ========================= */
+/* POPUP */
+/* ========================= */
+
+function showPopup(){
+
+    const popup =
+        document.getElementById(
+            'popup'
+        );
+
+    popup.classList.add('show');
+
+    setTimeout(() => {
+
+        popup.classList.remove(
+            'show'
+        );
+
+    }, 2000);
+
+}
+
+/* ========================= */
+/* TAKE PHOTO */
+/* ========================= */
+
+function takePhoto(){
+
+    if(!video.videoWidth){
+
+        alert(
+            "Kamera belum siap"
+        );
+
+        return;
+
+    }
+
+    const canvas =
+        document.getElementById(
+            'canvas'
+        );
+
+    const context =
+        canvas.getContext('2d');
+
+    /* ========================= */
+    /* RESIZE */
+    /* ========================= */
+
+    const maxWidth = 640;
+
+    const scale =
+        maxWidth / video.videoWidth;
+
+    canvas.width = maxWidth;
+
+    canvas.height =
+        video.videoHeight * scale;
+
+    /* ========================= */
+    /* BRIGHTNESS */
+    /* FIX: gunakan nilai CSS brightness yang sudah dikonversi */
+    /* ========================= */
+
+    const cssBrightness = parseInt(slider.value) + 100;
+
+    context.filter =
+        `brightness(${cssBrightness}%)`;
+
+    /* ========================= */
+    /* DRAW */
+    /* ========================= */
+
+    context.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    /* ========================= */
+    /* COMPRESS */
+    /* ========================= */
+
+    const imageData =
+        canvas.toDataURL(
+            'image/jpeg',
+            0.6
+        );
+
+    document.getElementById(
+        'camera_image'
+    ).value = imageData;
+
+    // FIX: kirim nilai brightness asli (-100..100) ke server
+    document.getElementById(
+        'brightnessInput'
+    ).value = slider.value;
+
+    showPopup();
+
+}
+
+</script>
+
+</body>
+</html>
