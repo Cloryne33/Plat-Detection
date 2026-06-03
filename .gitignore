@@ -2,3 +2,14 @@ dataset/
 __pycache__/
 uploads/
 *.pyc
+
+# Dataset CSV — generate sendiri
+data/dataset.csv
+data/nonplat_generated.csv
+
+# Hasil deteksi
+static/results/
+
+# OS
+.DS_Store
+Thumbs.db
