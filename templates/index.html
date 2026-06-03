@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>PlateVision — Deteksi Plat Nomor Indonesia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- BACKGROUND GRID -->
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">Plate<span class="accent">Vision</span></span>
+    </div>
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Pengolahan Citra Digital
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-sub">Deteksi &amp; Segmentasi Plat Nomor</p>
+    <h1 class="hero-title">Sistem <span class="accent">Deteksi Plat</span><br>Nomor Indonesia</h1>
+    <p class="hero-desc">Menggunakan algoritma Computer Vision berbasis CLAHE, Adaptive Thresholding, dan KNN Classifier untuk mendeteksi plat nomor kendaraan Indonesia secara akurat.</p>
+  </section>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="upload">
+      <span class="tab-icon">📁</span> Upload Gambar
+    </button>
+    <button class="tab" data-tab="camera">
+      <span class="tab-icon">📷</span> Kamera Langsung
+    </button>
+  </div>
+
+  <!-- PANEL UPLOAD -->
+  <div class="panel active" id="panel-upload">
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">🖼️</div>
+      <div class="drop-title">Seret gambar ke sini</div>
+      <div class="drop-sub">atau klik untuk memilih file</div>
+      <div class="drop-formats">PNG · JPG · JPEG · WEBP · BMP</div>
+      <input type="file" id="fileInput" accept="image/*" class="file-hidden">
+    </div>
+
+    <div class="preview-wrap hidden" id="previewWrap">
+      <img id="previewImg" class="preview-img" alt="Preview">
+      <button class="btn-clear" id="btnClear">✕ Hapus</button>
+    </div>
+
+    <div class="control-row">
+      <label class="control-label">
+        <span>Penyesuaian Kecerahan</span>
+        <span class="control-val" id="brightnessUpVal">0</span>
+      </label>
+      <input type="range" id="brightnessUp" class="slider" min="-100" max="100" value="0">
+    </div>
+
+    <button class="btn-detect" id="btnDetectUpload" disabled>
+      <span class="btn-spinner hidden"></span>
+      <span class="btn-label">🔍 Deteksi Plat</span>
+    </button>
+  </div>
+
+  <!-- PANEL KAMERA -->
+  <div class="panel hidden" id="panel-camera">
+    <div class="camera-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="cam-overlay">
+        <div class="cam-guide"></div>
+        <div class="cam-label">Arahkan plat nomor ke area ini</div>
+      </div>
+      <div class="cam-status" id="camStatus">Menginisialisasi kamera...</div>
+    </div>
+
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <div class="snapshot-wrap hidden" id="snapshotWrap">
+      <img id="snapshotImg" class="preview-img" alt="Snapshot">
+      <button class="btn-clear" id="btnClearSnap">✕ Ambil Ulang</button>
+    </div>
+
+    <div class="control-row">
+      <label class="control-label">
+        <span>Penyesuaian Kecerahan</span>
+        <span class="control-val" id="brightnessCamVal">0</span>
+      </label>
+      <input type="range" id="brightnessCam" class="slider" min="-100" max="100" value="0">
+    </div>
+
+    <div class="cam-btns">
+      <button class="btn-snap" id="btnSnap">📸 Ambil Foto</button>
+      <button class="btn-detect" id="btnDetectCam" disabled>
+        <span class="btn-spinner hidden"></span>
+        <span class="btn-label">🔍 Deteksi Plat</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- HASIL DETEKSI -->
+  <section class="result-section hidden" id="resultSection">
+
+    <div class="result-header">
+      <div class="result-badge" id="resultBadge">
+        <span id="resultIcon">✅</span>
+        <span id="resultLabel">—</span>
+      </div>
+      <div class="confidence-wrap">
+        <span class="conf-label">Keyakinan</span>
+        <span class="conf-val" id="confVal">—</span>
+      </div>
+    </div>
+
+    <!-- GAMBAR HASIL -->
+    <div class="result-img-wrap">
+      <img id="resultImg" class="result-img" alt="Hasil Deteksi">
+      <div class="result-img-label">Hasil Deteksi</div>
+    </div>
+
+    <!-- CROP PLAT -->
+    <div class="plate-crop-wrap hidden" id="plateCropWrap">
+      <div class="section-label">Region Plat Terdeteksi</div>
+      <img id="plateCropImg" class="plate-crop-img" alt="Crop Plat">
+    </div>
+
+    <!-- FITUR EKSTRAKSI -->
+    <div class="features-grid" id="featuresGrid">
+      <div class="section-label">Hasil Ekstraksi Fitur</div>
+      <div class="features-row" id="featuresRow">
+        <!-- diisi JS -->
+      </div>
+    </div>
+
+    <!-- TAHAPAN PREPROCESSING -->
+    <div class="steps-section" id="stepsSection">
+      <div class="section-label">Tahapan Segmentasi & Preprocessing</div>
+      <div class="steps-scroll" id="stepsScroll">
+        <!-- diisi JS -->
+      </div>
+    </div>
+
+  </section>
+
+  <!-- FOOTER INFO -->
+  <footer class="info-footer">
+    <div class="info-chips">
+      <span class="chip">Histogram Equalization</span>
+      <span class="chip">Gaussian Blur</span>
+      <span class="chip">Sobel &amp; Canny Edge</span>
+      <span class="chip">Otsu Thresholding</span>
+      <span class="chip">Morfologi (Dilasi + Closing)</span>
+      <span class="chip">KNN Classifier</span>
+    </div>
+    <p class="info-note">Proyek Akhir · Mata Kuliah Pengolahan Citra Digital</p>
+  </footer>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast">
+  <span id="toastMsg">—</span>
+</div>
+
+<script>
+/* ===========================
+   STATE
+   =========================== */
+let uploadedFile = null;
+let snapshotData = null;
+let cameraStream = null;
+
+/* ===========================
+   TABS
+   =========================== */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById(`panel-${tab}`).classList.remove('hidden');
+    if (tab === 'camera') startCamera();
+    else stopCamera();
+  });
+});
+
+/* ===========================
+   BRIGHTNESS SLIDERS
+   =========================== */
+document.getElementById('brightnessUp').addEventListener('input', function() {
+  document.getElementById('brightnessUpVal').textContent = this.value;
+});
+document.getElementById('brightnessCam').addEventListener('input', function() {
+  document.getElementById('brightnessCamVal').textContent = this.value;
+  const v = parseInt(this.value);
+  document.getElementById('video').style.filter = `brightness(${v + 100}%)`;
+});
+
+/* ===========================
+   DROP ZONE
+   =========================== */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const previewWrap = document.getElementById('previewWrap');
+const previewImg = document.getElementById('previewImg');
+const btnDetectUpload = document.getElementById('btnDetectUpload');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) setUploadFile(f);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) setUploadFile(fileInput.files[0]);
+});
+
+function setUploadFile(file) {
+  uploadedFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    previewImg.src = e.target.result;
+    dropZone.classList.add('hidden');
+    previewWrap.classList.remove('hidden');
+    btnDetectUpload.disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+document.getElementById('btnClear').addEventListener('click', () => {
+  uploadedFile = null;
+  fileInput.value = '';
+  previewImg.src = '';
+  previewWrap.classList.add('hidden');
+  dropZone.classList.remove('hidden');
+  btnDetectUpload.disabled = true;
+});
+
+/* ===========================
+   KAMERA
+   =========================== */
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const camStatus = document.getElementById('camStatus');
+const snapshotWrap = document.getElementById('snapshotWrap');
+const snapshotImg = document.getElementById('snapshotImg');
+const btnDetectCam = document.getElementById('btnDetectCam');
+
+async function startCamera() {
+  stopCamera();
+  camStatus.textContent = 'Menginisialisasi kamera...';
+  camStatus.classList.remove('hidden');
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = cameraStream;
+    video.classList.remove('hidden');
+    camStatus.classList.add('hidden');
+  } catch (err) {
+    camStatus.textContent = '⚠️ Kamera tidak dapat diakses';
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  video.srcObject = null;
+}
+
+document.getElementById('btnSnap').addEventListener('click', () => {
+  if (!video.videoWidth) { showToast('Kamera belum siap', 'error'); return; }
+  const scale = 800 / video.videoWidth;
+  canvas.width = 800;
+  canvas.height = Math.round(video.videoHeight * scale);
+  const ctx = canvas.getContext('2d');
+  const br = parseInt(document.getElementById('brightnessCam').value);
+  ctx.filter = `brightness(${br + 100}%)`;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  snapshotData = canvas.toDataURL('image/jpeg', 0.85);
+  snapshotImg.src = snapshotData;
+  snapshotWrap.classList.remove('hidden');
+  video.classList.add('hidden');
+  document.querySelector('.cam-overlay').classList.add('hidden');
+  btnDetectCam.disabled = false;
+  showToast('Foto berhasil diambil ✓', 'success');
+});
+
+document.getElementById('btnClearSnap').addEventListener('click', () => {
+  snapshotData = null;
+  snapshotWrap.classList.add('hidden');
+  video.classList.remove('hidden');
+  document.querySelector('.cam-overlay').classList.remove('hidden');
+  btnDetectCam.disabled = true;
+});
+
+/* ===========================
+   DETEKSI
+   =========================== */
+btnDetectUpload.addEventListener('click', () => {
+  if (!uploadedFile) return;
+  const fd = new FormData();
+  fd.append('image', uploadedFile);
+  fd.append('brightness', document.getElementById('brightnessUp').value);
+  runDetection(fd, btnDetectUpload);
+});
+
+btnDetectCam.addEventListener('click', () => {
+  if (!snapshotData) return;
+  const fd = new FormData();
+  fd.append('camera_image', snapshotData);
+  fd.append('brightness', document.getElementById('brightnessCam').value);
+  runDetection(fd, btnDetectCam);
+});
+
+async function runDetection(formData, btn) {
+  const spinner = btn.querySelector('.btn-spinner');
+  const label = btn.querySelector('.btn-label');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+  label.textContent = 'Memproses...';
+
+  try {
+    const res = await fetch('/detect', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (data.error && !data.label) {
+      showToast(data.error, 'error');
+      return;
+    }
+
+    renderResult(data);
+    document.getElementById('resultSection').classList.remove('hidden');
+    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (e) {
+    showToast('Terjadi kesalahan koneksi', 'error');
+  } finally {
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    label.textContent = '🔍 Deteksi Plat';
+  }
+}
+
+/* ===========================
+   RENDER RESULT
+   =========================== */
+function renderResult(data) {
+  const badge = document.getElementById('resultBadge');
+  const icon = document.getElementById('resultIcon');
+  const lbl = document.getElementById('resultLabel');
+  const confVal = document.getElementById('confVal');
+
+  const isFound = data.label && data.label.includes('Terdeteksi');
+  const isNotPlate = data.label && data.label.includes('Bukan');
+
+  badge.className = 'result-badge';
+  if (isFound) {
+    badge.classList.add('found');
+    icon.textContent = '✅';
+  } else if (isNotPlate) {
+    badge.classList.add('not-plate');
+    icon.textContent = '⛔';
+  } else {
+    badge.classList.add('not-found');
+    icon.textContent = '❌';
+  }
+  lbl.textContent = data.label || 'Plat Tidak Ditemukan';
+
+  const conf = data.features && data.features.confidence;
+  confVal.textContent = conf !== undefined ? `${conf}%` : '—';
+
+  if (data.result_image) {
+    const img = document.getElementById('resultImg');
+    img.src = data.result_image;
+  }
+
+  const cropWrap = document.getElementById('plateCropWrap');
+  if (data.steps && data.steps.plate_crop) {
+    document.getElementById('plateCropImg').src = data.steps.plate_crop;
+    cropWrap.classList.remove('hidden');
+  } else {
+    cropWrap.classList.add('hidden');
+  }
+
+  // Features
+  const featRow = document.getElementById('featuresRow');
+  featRow.innerHTML = '';
+  if (data.features && Object.keys(data.features).length > 0) {
+    const featureLabels = {
+      area: ['Luas Area', 'px²'],
+      aspect_ratio: ['Aspect Ratio', ''],
+      solidity: ['Soliditas', ''],
+      extent: ['Extent', ''],
+      perimeter_ratio: ['Rasio Perimeter', ''],
+      confidence: ['Keyakinan Model', '%']
+    };
+    for (const [key, [label2, unit]] of Object.entries(featureLabels)) {
+      if (data.features[key] !== undefined) {
+        featRow.innerHTML += `
+          <div class="feat-card">
+            <div class="feat-val">${data.features[key]}${unit}</div>
+            <div class="feat-name">${label2}</div>
+          </div>`;
+      }
+    }
+    document.getElementById('featuresGrid').classList.remove('hidden');
+  } else {
+    document.getElementById('featuresGrid').classList.add('hidden');
+  }
+
+  // Step images
+  const stepsScroll = document.getElementById('stepsScroll');
+  stepsScroll.innerHTML = '';
+  const stepLabels = {
+    '1_grayscale'    : '① Grayscale',
+    '2_histogram_eq' : '② Ekualisasi Histogram',
+    '3_gaussian_blur': '③ Gaussian Blur',
+    '4a_sobel'       : '④a Sobel Edge',
+    '4b_canny'       : '④b Canny Edge',
+    '5_otsu'         : '⑤ Otsu Threshold',
+    '6a_morph_canny' : '⑥a Morfologi (Canny)',
+    '6b_morph_otsu'  : '⑥b Morfologi (Otsu)',
+  };
+  if (data.steps) {
+    let hasSteps = false;
+    for (const [key, url] of Object.entries(data.steps)) {
+      if (key === 'plate_crop') continue;
+      const label2 = stepLabels[key] || key;
+      stepsScroll.innerHTML += `
+        <div class="step-card">
+          <img src="${url}" class="step-img" alt="${label2}">
+          <div class="step-label">${label2}</div>
+        </div>`;
+      hasSteps = true;
+    }
+    document.getElementById('stepsSection').style.display = hasSteps ? '' : 'none';
+  }
+}
+
+/* ===========================
+   TOAST
+   =========================== */
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type}`;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 3000);
+}
+</script>
+</body>
+</html>
